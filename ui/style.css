@@ -1,5 +1,6 @@
 :root { font: 13px "Segoe UI", system-ui, sans-serif; color: #ccc; background: #1e1e1e; color-scheme: dark; }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; }
 main { padding: 12px; }
 form { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px 8px; align-items: center; }
@@ -17,3 +18,4 @@ input[type="checkbox"] { width: auto; min-height: 0; margin: 0; accent-color: #0
 #restore { margin-left: auto; }
 #status { grid-column: 1 / -1; border-top: 1px solid #333; padding-top: 10px; font-size: 12px; overflow-wrap: anywhere; }
 #status[data-state="error"] { color: #f48771; }
+#status[data-state="warning"] { color: #cca700; }

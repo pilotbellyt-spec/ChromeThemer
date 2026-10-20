@@ -1,6 +1,11 @@
 (() => {
   const sheet = new CSSStyleSheet();
-  sheet.replaceSync(__CHROMETHEMER_CSS__);
+  sheet.replaceSync(__CHROMETHEMER_CSS__ + `
+    :host(webui-browser-app) .tabstripDiv {
+      app-region: drag;
+      -webkit-app-region: drag;
+    }
+  `);
   const roots = new WeakMap();
 
   function adopt(root) {
@@ -42,6 +47,14 @@
   customElements.define = function (name, constructor, options) {
     if (name === 'webui-browser-app') {
       installOmniboxFocus(constructor.prototype);
+      const maximize = constructor.prototype.onMaximizeClick_;
+      constructor.prototype.onMaximizeClick_ = function (event) {
+        if (Math.max(window.innerWidth, window.outerWidth) >= screen.availWidth &&
+            Math.max(window.innerHeight, window.outerHeight) >= screen.availHeight) {
+          return this.onRestoreClick_(event);
+        }
+        return maximize.call(this, event);
+      };
       customElements.define = define;
     }
     return define.call(this, name, constructor, options);

@@ -16,6 +16,10 @@
         <label for="theme">Theme</label>
         <input id="theme" name="theme" spellcheck="false" required>
         <button type="button" id="choose-theme" aria-label="Choose theme folder">Browse…</button>
+        <label class="option" id="titlebar-option" hidden title="Applies when launching from ChromeThemer or its shortcut. Available on Windows and X11.">
+          <input type="checkbox" id="frameless">
+          Enable experimental combined titlebar
+        </label>
         <label class="option" title="Includes userChrome.js when applying. Runs with Chrome UI privileges.">
           <input type="checkbox" id="unsafe-theme">
           Enable loading unsafe theme files
@@ -23,6 +27,7 @@
         <div class="actions">
           <button type="submit" class="primary" id="apply">Apply</button>
           <button type="button" id="launch">Launch</button>
+          <button type="button" id="shortcut" hidden>Shortcut…</button>
           <button type="button" id="open-theme">Open folder</button>
           <button type="button" id="restore">Restore</button>
         </div>

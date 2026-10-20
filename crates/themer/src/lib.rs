@@ -1,4 +1,5 @@
 pub mod pak;
+pub mod palette;
 mod webium;
 
 use std::{

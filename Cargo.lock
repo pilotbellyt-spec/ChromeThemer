@@ -567,12 +567,18 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chromethemer",
+ "rfd",
+ "serde",
+ "serde_json",
+ "shlex",
  "sysinfo",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",
  "tauri-plugin-opener",
  "tempfile",
+ "windows 0.61.3",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

@@ -113,7 +113,8 @@ jobs:
           Copy-Item -LiteralPath themes -Destination $portable -Recurse
           New-Item -ItemType Directory -Path artifacts | Out-Null
           Compress-Archive -Path "$portable/*" -DestinationPath "artifacts/ChromeThemer-windows-$env:ARCH-portable.zip"
-          $config = @{ bundle = @{ resources = $resources } } | ConvertTo-Json -Depth 5 -Compress
+          $config = Join-Path $env:RUNNER_TEMP 'chromethemer-bundle.json'
+          @{ bundle = @{ resources = $resources } } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $config -Encoding utf8
           npm run tauri -- bundle --ci --target $env:TARGET --bundles nsis --features custom-protocol --config $config
           if ($LASTEXITCODE -ne 0) { throw 'Windows installer packaging failed' }
           $installers = @(Get-ChildItem -Path "$release/bundle/nsis/*-setup.exe")

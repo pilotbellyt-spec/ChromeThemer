@@ -23,7 +23,7 @@ permissions:
 
 concurrency:
   group: packages-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   CARGO_INCREMENTAL: '0'
@@ -185,7 +185,7 @@ jobs:
         run: |
           mkdir artifacts
           release="target/$TARGET/release/bundle"
-          lipo -verify_arch "${ARCH/x64/x86_64}" "$release/macos/ChromeThemer.app/Contents/MacOS/chromethemer-desktop"
+          lipo "$release/macos/ChromeThemer.app/Contents/MacOS/chromethemer-desktop" -verify_arch "${ARCH/x64/x86_64}"
           tar -czf "artifacts/ChromeThemer-macos-$ARCH.app.tar.gz" -C "$release/macos" ChromeThemer.app
           cp "$release"/dmg/*.dmg "artifacts/ChromeThemer-macos-$ARCH.dmg"
       - name: Collect Linux packages

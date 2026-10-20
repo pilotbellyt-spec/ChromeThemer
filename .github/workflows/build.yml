@@ -7,6 +7,11 @@ on:
         description: 'Upload to this existing draft release instead of Actions artifacts'
         type: string
         default: ''
+      platform:
+        description: 'Platforms to build'
+        type: choice
+        options: [all, windows, unix]
+        default: all
   push:
     tags: ['v*']
 
@@ -24,6 +29,7 @@ env:
 
 jobs:
   windows:
+    if: inputs.platform != 'unix'
     name: Windows ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
@@ -38,6 +44,7 @@ jobs:
           - arch: x64
             runner: windows-2022
             target: x86_64-pc-windows-gnu
+            toolchain: stable-x86_64-pc-windows-gnu
             msystem: UCRT64
             compiler: ucrt64/bin/gcc.exe
             package: mingw-w64-ucrt-x86_64-gcc
@@ -45,6 +52,7 @@ jobs:
           - arch: arm64
             runner: windows-11-arm
             target: aarch64-pc-windows-msvc
+            toolchain: stable-aarch64-pc-windows-msvc
             msystem: CLANGARM64
             compiler: clangarm64/bin/clang.exe
             package: mingw-w64-clang-aarch64-clang
@@ -63,10 +71,12 @@ jobs:
           install: ${{ matrix.package }}
       - uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: ${{ matrix.toolchain }}
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
         with:
           key: windows-${{ matrix.target }}
+          cache-on-failure: true
       - name: Set frame compiler
         shell: pwsh
         env:
@@ -134,6 +144,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
 
   unix:
+    if: inputs.platform != 'windows'
     name: ${{ matrix.platform }} ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
@@ -182,6 +193,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.target }}
+          cache-on-failure: true
       - run: npm ci
       - name: Build packages
         run: npm run tauri -- build --ci --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --features custom-protocol -- --locked

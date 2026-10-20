@@ -19,6 +19,7 @@
     "category": "Utility",
     "shortDescription": "Theme Chrome's Webium interface",
     "resources": { "../themes/": "themes/" },
+    "macOS": { "signingIdentity": "-" },
     "linux": { "deb": { "depends": ["x11-utils"] } },
     "windows": { "nsis": { "installMode": "currentUser" } }
   }

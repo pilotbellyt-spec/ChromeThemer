@@ -1,0 +1,207 @@
+name: Build packages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - '.github/workflows/build.yml'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'crates/**'
+      - 'src-tauri/**'
+      - 'runtime/**'
+      - 'ui/**'
+      - 'themes/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: packages-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_INCREMENTAL: '0'
+  CARGO_TERM_COLOR: always
+
+jobs:
+  windows:
+    name: Windows ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    env:
+      CARGO_TARGET_AARCH64_PC_WINDOWS_MSVC_RUSTFLAGS: '-C target-feature=+crt-static'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-2022
+            target: x86_64-pc-windows-gnu
+            msystem: UCRT64
+            compiler: ucrt64/bin/gcc.exe
+            package: mingw-w64-ucrt-x86_64-gcc
+            machine: 34404
+          - arch: arm64
+            runner: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            msystem: CLANGARM64
+            compiler: clangarm64/bin/clang.exe
+            package: mingw-w64-clang-aarch64-clang
+            machine: 43620
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: msys2/setup-msys2@v2
+        id: msys2
+        with:
+          msystem: ${{ matrix.msystem }}
+          update: true
+          install: ${{ matrix.package }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: windows-${{ matrix.target }}
+      - name: Set frame compiler
+        shell: pwsh
+        env:
+          MSYS2_ROOT: ${{ steps.msys2.outputs.msys2-location }}
+          FRAME_COMPILER: ${{ matrix.compiler }}
+        run: |
+          $compiler = Join-Path $env:MSYS2_ROOT $env:FRAME_COMPILER
+          "CHROMETHEMER_FRAME_CC=$compiler" >> $env:GITHUB_ENV
+          (Split-Path -Parent $compiler) >> $env:GITHUB_PATH
+      - run: npm ci
+      - name: Build app
+        run: npm run tauri -- build --ci --no-bundle --target ${{ matrix.target }} --features custom-protocol -- --locked
+      - name: Package installer and portable ZIP
+        shell: pwsh
+        env:
+          TARGET: ${{ matrix.target }}
+          ARCH: ${{ matrix.arch }}
+          PE_MACHINE: ${{ matrix.machine }}
+        run: |
+          $release = Join-Path $PWD "target/$env:TARGET/release"
+          $exe = Join-Path $release 'chromethemer-desktop.exe'
+          $helper = Join-Path $release 'ChromeThemerFrame.dll'
+          foreach ($binary in @($exe, $helper)) {
+            $bytes = [IO.File]::ReadAllBytes($binary)
+            $header = [BitConverter]::ToInt32($bytes, 0x3c)
+            $machine = [BitConverter]::ToUInt16($bytes, $header + 4)
+            if ($machine -ne [int]$env:PE_MACHINE) { throw "Wrong architecture: $binary" }
+          }
+          $resources = @{ "$release/ChromeThemerFrame.dll" = 'ChromeThemerFrame.dll' }
+          $portable = New-Item -ItemType Directory -Path "target/portable-$env:ARCH"
+          Copy-Item -LiteralPath $exe -Destination (Join-Path $portable 'ChromeThemer.exe')
+          Copy-Item -LiteralPath $helper -Destination $portable
+          if ($env:ARCH -eq 'x64') {
+            $loader = Join-Path $release 'WebView2Loader.dll'
+            if (-not (Test-Path -LiteralPath $loader)) { throw 'Missing WebView2Loader.dll' }
+            Copy-Item -LiteralPath $loader -Destination $portable
+            $resources[$loader] = 'WebView2Loader.dll'
+          }
+          Copy-Item -LiteralPath themes -Destination $portable -Recurse
+          New-Item -ItemType Directory -Path artifacts | Out-Null
+          Compress-Archive -Path "$portable/*" -DestinationPath "artifacts/ChromeThemer-windows-$env:ARCH-portable.zip"
+          $config = @{ bundle = @{ resources = $resources } } | ConvertTo-Json -Depth 5 -Compress
+          npm run tauri -- bundle --ci --target $env:TARGET --bundles nsis --features custom-protocol --config $config
+          if ($LASTEXITCODE -ne 0) { throw 'Windows installer packaging failed' }
+          $installers = @(Get-ChildItem -Path "$release/bundle/nsis/*-setup.exe")
+          if ($installers.Count -ne 1) { throw 'Expected one NSIS installer' }
+          Copy-Item -LiteralPath $installers[0].FullName -Destination "artifacts/ChromeThemer-windows-$env:ARCH-setup.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ChromeThemer-windows-${{ matrix.arch }}
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 14
+
+  unix:
+    name: ${{ matrix.platform }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos
+            arch: x64
+            runner: macos-15-intel
+            target: x86_64-apple-darwin
+            bundles: app,dmg
+          - platform: macos
+            arch: arm64
+            runner: macos-15
+            target: aarch64-apple-darwin
+            bundles: app,dmg
+          - platform: linux
+            arch: x64
+            runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: deb,appimage
+          - platform: linux
+            arch: arm64
+            runner: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
+            bundles: deb,appimage
+    env:
+      APPIMAGE_EXTRACT_AND_RUN: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libssl-dev librsvg2-dev libayatana-appindicator3-dev libxdo-dev patchelf x11-utils file
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - run: npm ci
+      - name: Build packages
+        run: npm run tauri -- build --ci --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --features custom-protocol -- --locked
+      - name: Collect macOS packages
+        if: matrix.platform == 'macos'
+        env:
+          TARGET: ${{ matrix.target }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          mkdir artifacts
+          release="target/$TARGET/release/bundle"
+          lipo -verify_arch "${ARCH/x64/x86_64}" "$release/macos/ChromeThemer.app/Contents/MacOS/chromethemer-desktop"
+          tar -czf "artifacts/ChromeThemer-macos-$ARCH.app.tar.gz" -C "$release/macos" ChromeThemer.app
+          cp "$release"/dmg/*.dmg "artifacts/ChromeThemer-macos-$ARCH.dmg"
+      - name: Collect Linux packages
+        if: matrix.platform == 'linux'
+        env:
+          TARGET: ${{ matrix.target }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          mkdir artifacts
+          release="target/$TARGET/release/bundle"
+          cp "$release"/deb/*.deb "artifacts/ChromeThemer-linux-$ARCH.deb"
+          cp "$release"/appimage/*.AppImage "artifacts/ChromeThemer-linux-$ARCH.AppImage"
+          dpkg-deb --info "artifacts/ChromeThemer-linux-$ARCH.deb"
+          file "target/$TARGET/release/chromethemer-desktop"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ChromeThemer-${{ matrix.platform }}-${{ matrix.arch }}
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 14

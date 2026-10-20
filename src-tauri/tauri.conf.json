@@ -13,5 +13,13 @@
     "windows": [{ "title": "ChromeThemer", "width": 600, "height": 270, "minWidth": 420, "minHeight": 270 }],
     "security": { "csp": "default-src 'self'; style-src 'self'; script-src 'self'; connect-src ipc: http://ipc.localhost" }
   },
-  "bundle": { "active": false }
+  "bundle": {
+    "active": true,
+    "icon": ["icons/icon.png", "icons/icon.ico"],
+    "category": "Utility",
+    "shortDescription": "Theme Chrome's Webium interface",
+    "resources": { "../themes/": "themes/" },
+    "linux": { "deb": { "depends": ["x11-utils"] } },
+    "windows": { "nsis": { "installMode": "currentUser" } }
+  }
 }

@@ -19,3 +19,4 @@ ChromeThemer allows you to import userChrome.css or userChrome.js to Chrome's sh
 - select the theme folder
 - click apply.
 - Your theme should now be applied.
+- if you have combined titlebar enabled, or you dont want the custom theme to be always active you can choose to save a shortcut, simply save it where you choose, then run it from there.

@@ -1,0 +1,286 @@
+/* Chrome 68 normal-density geometry: chrome/browser/ui/views/tabs/tab.cc. */
+:root, :host {
+  color-scheme: dark;
+  --color-frame-active: #282b2d;
+  --color-frame-inactive: #383b3d;
+  --color-toolbar: #505050;
+  --color-toolbar-text: #ffffff;
+  --color-toolbar-button-icon: #e0e0e0;
+  --color-toolbar-separator: #282828;
+  --color-tab-background-active-frame-active: #505050;
+  --color-tab-background-active-frame-inactive: #484848;
+  --color-tab-background-inactive-frame-active: #3b3e40;
+  --color-tab-background-inactive-frame-inactive: #414446;
+  --color-tab-background-highlighted: #45484a;
+  --color-tab-foreground-active-frame-active: #ffffff;
+  --color-tab-foreground-inactive-frame-active: #e1e1e1;
+  --color-tab-foreground-active-frame-inactive: #e1e1e1;
+  --color-tab-foreground-inactive-frame-inactive: #c2c2c2;
+  --color-searchbox-background: #292b2d;
+  --color-searchbox-background-hovered: #303234;
+  --color-searchbox-foreground: #f1f1f1;
+  --color-searchbox-placeholder: #b8babc;
+  --color-searchbox-search-icon-background: #c8cacc;
+  --color-searchbox-selection-background: #395d85;
+  --color-searchbox-selection-foreground: #ffffff;
+  --color-searchbox-results-background: #292b2d;
+  --color-searchbox-results-background-hovered: #3a3d40;
+  --color-searchbox-results-background-selected: #3f536c;
+  --color-searchbox-results-foreground: #f1f1f1;
+  --color-searchbox-results-foreground-selected: #ffffff;
+  --color-searchbox-results-foreground-dimmed: #c5c7c9;
+  --color-searchbox-results-dim-selected: #e1e4e8;
+  --color-searchbox-results-typed-prefix: #f1f1f1;
+  --color-searchbox-results-url: #a9caff;
+  --color-searchbox-results-url-selected: #d2e2ff;
+  --color-searchbox-results-icon: #c8cacc;
+  --color-searchbox-results-icon-selected: #ffffff;
+  --color-searchbox-results-icon-focused-outline: #8ab4f8;
+  --color-searchbox-results-focus-indicator: #8ab4f8;
+  --color-searchbox-results-button-hover: #484c50;
+  --color-searchbox-results-button-selected-hover: #52667f;
+  --color-searchbox-results-action-chip: #a9caff;
+  --color-searchbox-results-action-chip-icon: #a9caff;
+  --color-searchbox-results-action-chip-icon-selected: #d2e2ff;
+  --color-searchbox-results-action-chip-focus-outline: #8ab4f8;
+  --color-searchbox-dropdown-divider: #55585b;
+  --classic-tab-stroke: #202224;
+  --classic-tab-outline: shape(from 0px 29px,
+    line to 0px 28px,
+    curve to 2px 26.5px with .75px 28px / 1.625px 27.5px,
+    line to 13.5px 1.5px,
+    curve to 15.5px 0px with 13.875px .5px / 14.75px 0px,
+    line to calc(100% - 15.5px) 0px,
+    curve to calc(100% - 13.5px) 1.5px
+      with calc(100% - 14.75px) 0px / calc(100% - 13.875px) .5px,
+    line to calc(100% - 2px) 26.5px,
+    curve to 100% 28px with calc(100% - 1.625px) 27.5px / calc(100% - .75px) 28px,
+    line to 100% 29px, close);
+  --classic-tab-interior: shape(from 16.5px 1px,
+    curve to 14.5px 2.5px with 15.75px 1px / 14.875px 1.5px,
+    line to 3px 27.5px,
+    curve to 1px 29px with 2.625px 28.5px / 1.75px 29px,
+    line to calc(100% - 1px) 29px,
+    curve to calc(100% - 3px) 27.5px
+      with calc(100% - 1.75px) 29px / calc(100% - 2.625px) 28.5px,
+    line to calc(100% - 14.5px) 2.5px,
+    curve to calc(100% - 16.5px) 1px
+      with calc(100% - 14.875px) 1.5px / calc(100% - 15.75px) 1px,
+    close);
+  --classic-close-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.75 4.75l6.5 6.5M4.75 11.25l6.5-6.5' fill='none' stroke='white' stroke-width='1.415'/%3E%3C/svg%3E");
+}
+
+:host(webui-browser-app) .titlebarDiv {
+  background: linear-gradient(to top, var(--classic-tab-stroke) 1px, var(--color-frame-active) 1px);
+}
+
+:host(webui-browser-app[inactive]) .titlebarDiv {
+  background: linear-gradient(to top, var(--classic-tab-stroke) 1px, var(--color-frame-inactive) 1px);
+}
+
+:host(webui-browser-app) .caption-button {
+  height: 36px;
+}
+
+:host(webui-browser-app) #searchBar {
+  padding: 4px 6px;
+  background: var(--color-toolbar);
+}
+
+:host(webui-browser-app) cr-icon-button {
+  --cr-icon-button-size: 28px;
+  --cr-icon-button-icon-size: 16px;
+}
+
+:host(webui-browser-app) webui-browser-searchbox {
+  --cr-searchbox-height: 28px;
+  --cr-searchbox-input-height: 28px;
+  --cr-searchbox-border-radius: 2px;
+  --cr-searchbox-font-size: 13px;
+  --cr-searchbox-shadow: 0 0 0 1px #242628;
+  margin: 0 6px;
+}
+
+:host(webui-browser-tab-strip) #tabstrip {
+  margin: 7px 0 0;
+  isolation: isolate;
+}
+
+@property --classic-hover-opacity {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+:host(webui-browser-tab) {
+  --classic-tab-fill: var(--color-tab-background-inactive-frame-active);
+  --classic-hover-opacity: 0;
+  transition: --classic-hover-opacity 400ms ease-in;
+  position: relative;
+  flex: 1 1 209px;
+  max-width: 209px;
+  min-width: 32px;
+  margin-inline-end: -16px;
+  container: classic-tab / inline-size;
+  clip-path: var(--classic-tab-outline);
+  z-index: calc(1000 - sibling-index()) !important;
+}
+
+:host(webui-browser-tab[active]) {
+  --classic-tab-fill: var(--color-tab-background-active-frame-active);
+  min-width: 48px;
+  z-index: 1001 !important;
+}
+
+:host(webui-browser-tab[inactive-frame]) {
+  --classic-tab-fill: var(--color-tab-background-inactive-frame-inactive);
+}
+
+:host(webui-browser-tab[inactive-frame][active]) {
+  --classic-tab-fill: var(--color-tab-background-active-frame-inactive);
+}
+
+:host(webui-browser-tab:not([active]):not([drag-in-progress]):hover) {
+  --classic-hover-opacity: .45;
+  transition-timing-function: ease-out;
+}
+
+:host(webui-browser-tab) .tab {
+  height: 29px;
+  border-radius: 0;
+  padding: 1px 16px;
+  box-sizing: border-box;
+  isolation: isolate;
+  font: 12px/16px "Segoe UI", Arial, sans-serif;
+  background: transparent !important;
+}
+
+:host(webui-browser-tab) .tab::before,
+:host(webui-browser-tab) .tab::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+:host(webui-browser-tab) .tab::before {
+  background: var(--classic-tab-stroke);
+  clip-path: var(--classic-tab-outline);
+}
+
+:host(webui-browser-tab) .tab::after {
+  background: var(--classic-tab-fill);
+  background-image: radial-gradient(
+    circle max(25cqw, 16px) at var(--classic-hover-x, 50%) var(--classic-hover-y, 50%),
+    rgb(80 80 80 / var(--classic-hover-opacity)), transparent);
+  clip-path: var(--classic-tab-interior);
+}
+
+:host(webui-browser-tab) #faviconContainer {
+  flex: 0 0 16px;
+  transform: translateY(.5px);
+}
+
+:host(webui-browser-tab) #title {
+  margin: 0 4px 0 6px;
+  mask-image: linear-gradient(to right, #000 calc(100% - 12px), transparent);
+}
+
+:host(webui-browser-tab) #bottomCorners {
+  display: none;
+}
+
+:host(webui-browser-tab) .close {
+  position: relative;
+  flex: 0 0 16px;
+  --cr-icon-button-size: 16px;
+  --cr-icon-button-icon-size: 16px;
+  --cr-icon-button-hover-background-color: #ffffff26;
+  --cr-icon-button-active-background-color: #ffffff40;
+}
+
+:host(webui-browser-tab) .close::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  mask: var(--classic-close-icon) center / 16px 16px no-repeat;
+  pointer-events: none;
+}
+
+:host(cr-icon-button.close) #icon {
+  visibility: hidden;
+}
+
+@media (min-resolution: 1.01dppx) {
+  :root, :host {
+    --classic-close-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M10.25 10.25l11.5 11.5M10.25 21.75l11.5-11.5' fill='none' stroke='white' stroke-width='2.45'/%3E%3C/svg%3E");
+  }
+}
+
+@container classic-tab (width < 80px) {
+  :host(webui-browser-tab:not([active])) .close { display: none; }
+}
+
+@container classic-tab (width < 64px) {
+  :host(webui-browser-tab[active]) #faviconContainer { display: none; }
+}
+
+@container classic-tab (width < 48px) {
+  :host(webui-browser-tab:not([active])) #title { display: none; }
+  :host(webui-browser-tab:not([active])) #faviconContainer {
+    position: absolute;
+    inset-inline-start: calc(50% - 8px);
+  }
+}
+
+:host(webui-browser-tab-strip) #newTabButton {
+  position: relative;
+  width: 36px;
+  height: 18px;
+  flex: 0 0 36px;
+  margin: 0 0 4px 11px;
+  border-radius: 0;
+  --cr-icon-button-icon-size: 0px;
+  --cr-icon-button-hover-background-color: transparent;
+  --cr-icon-button-active-background-color: transparent;
+}
+
+:host(webui-browser-tab-strip) #newTabButton::before,
+:host(webui-browser-tab-strip) #newTabButton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+:host(webui-browser-tab-strip) #newTabButton::before {
+  background: var(--classic-tab-stroke);
+  clip-path: shape(from 8.75px 17px,
+    curve to 6.75px 15.5px with 8px 17px / 7.125px 16.5px,
+    line to 1px 3px,
+    curve to 2px 0px with .5px 1.875px / 1.5px 0px,
+    line to 27.25px 0px,
+    curve to 29.25px 1.5px with 28px 0px / 28.875px .5px,
+    line to 35px 14px,
+    curve to 34px 17px with 35.5px 15.125px / 34.5px 17px,
+    close);
+}
+
+:host(webui-browser-tab-strip) #newTabButton::after {
+  background: var(--color-tab-background-inactive-frame-active);
+  clip-path: shape(from 9.75px 16px,
+    curve to 7.75px 14.5px with 9px 16px / 8.125px 15.5px,
+    line to 2px 2px,
+    curve to 3px 1px with 2px 1.5px / 2.25px 1px,
+    line to 26.25px 1px,
+    curve to 28.25px 2.5px with 27px 1px / 27.875px 1.5px,
+    line to 34px 15px,
+    curve to 33px 16px with 34px 15.5px / 33.75px 16px,
+    close);
+}
+
+:host(webui-browser-tab-strip) #newTabButton:hover::after {
+  background: var(--color-tab-background-highlighted);
+}

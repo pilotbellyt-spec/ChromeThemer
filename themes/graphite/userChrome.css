@@ -1,0 +1,55 @@
+:root, :host {
+  color-scheme: dark;
+  --color-frame-active: #191b20;
+  --color-frame-inactive: #22242a;
+  --color-toolbar: #24272e;
+  --color-toolbar-text: #e6e8ee;
+  --color-toolbar-button-icon: #bec6d6;
+  --color-tab-background-active-frame-active: #24272e;
+  --color-tab-background-inactive-frame-active: #191b20;
+  --color-tab-foreground-active-frame-active: #e6e8ee;
+  --color-tab-foreground-inactive-frame-active: #bec6d6;
+  --color-tab-foreground-active-frame-inactive: #e6e8ee;
+  --color-tab-foreground-inactive-frame-inactive: #aab2c0;
+  --color-searchbox-background: #17191e;
+  --color-searchbox-background-hovered: #20242b;
+  --color-searchbox-foreground: #e6e8ee;
+  --color-searchbox-placeholder: #aab2c0;
+  --color-searchbox-search-icon-background: #bec6d6;
+  --color-searchbox-selection-background: #385479;
+  --color-searchbox-selection-foreground: #ffffff;
+  --color-searchbox-results-background: #17191e;
+  --color-searchbox-results-background-hovered: #2b313b;
+  --color-searchbox-results-background-selected: #35445a;
+  --color-searchbox-results-foreground: #e6e8ee;
+  --color-searchbox-results-foreground-selected: #ffffff;
+  --color-searchbox-results-foreground-dimmed: #b4bdcb;
+  --color-searchbox-results-dim-selected: #d3dae5;
+  --color-searchbox-results-typed-prefix: #e6e8ee;
+  --color-searchbox-results-url: #9dc3ff;
+  --color-searchbox-results-url-selected: #c5dbff;
+  --color-searchbox-results-icon: #bec6d6;
+  --color-searchbox-results-icon-selected: #e6e8ee;
+  --color-searchbox-results-icon-focused-outline: #8ab4f8;
+  --color-searchbox-results-focus-indicator: #8ab4f8;
+  --color-searchbox-results-button-hover: #343c49;
+  --color-searchbox-results-button-selected-hover: #4b5b70;
+  --color-searchbox-results-action-chip: #9dc3ff;
+  --color-searchbox-results-action-chip-icon: #9dc3ff;
+  --color-searchbox-results-action-chip-icon-selected: #c5dbff;
+  --color-searchbox-results-action-chip-focus-outline: #8ab4f8;
+  --color-searchbox-dropdown-divider: #3b414c;
+}
+
+:host(webui-browser-app) #searchBar {
+  padding: 8px 12px;
+}
+
+:host(webui-browser-app) webui-browser-searchbox {
+  --cr-searchbox-background: #17191e;
+  --cr-searchbox-border-radius: 8px;
+}
+
+:host(webui-browser-tab) {
+  border-radius: 8px 8px 0 0;
+}

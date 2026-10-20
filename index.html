@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChromeThemer</title>
+    <link rel="stylesheet" href="/ui/style.css">
+    <script type="module" src="/ui/app.js"></script>
+  </head>
+  <body>
+    <main>
+      <form id="theme-form">
+        <label for="browser">Chrome</label>
+        <input id="browser" name="browser" spellcheck="false" required>
+        <button type="button" id="choose-browser" aria-label="Choose Chrome executable">Browse…</button>
+        <label for="theme">Theme</label>
+        <input id="theme" name="theme" spellcheck="false" required>
+        <button type="button" id="choose-theme" aria-label="Choose theme folder">Browse…</button>
+        <label class="option" title="Includes userChrome.js when applying. Runs with Chrome UI privileges.">
+          <input type="checkbox" id="unsafe-theme">
+          Enable loading unsafe theme files
+        </label>
+        <div class="actions">
+          <button type="submit" class="primary" id="apply">Apply</button>
+          <button type="button" id="launch">Launch</button>
+          <button type="button" id="open-theme">Open folder</button>
+          <button type="button" id="restore">Restore</button>
+        </div>
+        <div id="status" role="status" aria-live="polite"><span id="message">Ready.</span></div>
+      </form>
+    </main>
+  </body>
+</html>

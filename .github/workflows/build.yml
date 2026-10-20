@@ -2,21 +2,13 @@ name: Build packages
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Upload to this existing draft release instead of Actions artifacts'
+        type: string
+        default: ''
   push:
-    branches: [main]
     tags: ['v*']
-    paths:
-      - '.github/workflows/build.yml'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'crates/**'
-      - 'src-tauri/**'
-      - 'runtime/**'
-      - 'ui/**'
-      - 'themes/**'
-      - 'index.html'
-      - 'package.json'
-      - 'package-lock.json'
 
 permissions:
   contents: read
@@ -28,12 +20,15 @@ concurrency:
 env:
   CARGO_INCREMENTAL: '0'
   CARGO_TERM_COLOR: always
+  RELEASE_TAG: ${{ inputs.release_tag || '' }}
 
 jobs:
   windows:
     name: Windows ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
+    permissions:
+      contents: write
     env:
       CARGO_TARGET_AARCH64_PC_WINDOWS_MSVC_RUSTFLAGS: '-C target-feature=+crt-static'
     strategy:
@@ -121,16 +116,29 @@ jobs:
           if ($installers.Count -ne 1) { throw 'Expected one NSIS installer' }
           Copy-Item -LiteralPath $installers[0].FullName -Destination "artifacts/ChromeThemer-windows-$env:ARCH-setup.exe"
       - uses: actions/upload-artifact@v4
+        if: env.RELEASE_TAG == ''
         with:
           name: ChromeThemer-windows-${{ matrix.arch }}
           path: artifacts/*
           if-no-files-found: error
           retention-days: 14
+      - name: Upload to draft release
+        if: env.RELEASE_TAG != ''
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $draft = gh release view $env:RELEASE_TAG --json isDraft --jq .isDraft
+          if ($LASTEXITCODE -ne 0 -or $draft -ne 'true') { throw 'The target release must exist and be a draft' }
+          gh release upload $env:RELEASE_TAG (Get-ChildItem -LiteralPath artifacts -File).FullName --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
 
   unix:
     name: ${{ matrix.platform }} ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -201,8 +209,16 @@ jobs:
           dpkg-deb --info "artifacts/ChromeThemer-linux-$ARCH.deb"
           file "target/$TARGET/release/chromethemer-desktop"
       - uses: actions/upload-artifact@v4
+        if: env.RELEASE_TAG == ''
         with:
           name: ChromeThemer-${{ matrix.platform }}-${{ matrix.arch }}
           path: artifacts/*
           if-no-files-found: error
           retention-days: 14
+      - name: Upload to draft release
+        if: env.RELEASE_TAG != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+          gh release upload "$RELEASE_TAG" artifacts/* --clobber

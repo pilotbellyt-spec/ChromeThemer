@@ -83,13 +83,22 @@
 }
 
 :host(webui-browser-app) #searchBar {
-  padding: 4px 6px;
+  box-sizing: border-box;
+  height: 37px;
+  align-items: center;
+  padding: 4px 8px 5px;
   background: var(--color-toolbar);
 }
 
-:host(webui-browser-app) cr-icon-button {
+:host(webui-browser-app) #searchBar cr-icon-button {
   --cr-icon-button-size: 28px;
   --cr-icon-button-icon-size: 16px;
+  --cr-icon-button-margin-start: 0;
+  --cr-icon-button-margin-end: 0;
+}
+
+:host(webui-browser-app) #addressBox {
+  height: 28px;
 }
 
 :host(webui-browser-app) webui-browser-searchbox {
@@ -97,8 +106,88 @@
   --cr-searchbox-input-height: 28px;
   --cr-searchbox-border-radius: 2px;
   --cr-searchbox-font-size: 13px;
+  --cr-searchbox-icon-size-in-searchbox: 16px;
   --cr-searchbox-shadow: 0 0 0 1px #242628;
-  margin: 0 6px;
+  margin: 0 4px;
+}
+
+:host(webui-browser-app) #locationIconButton {
+  top: 0;
+  left: 6px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 2px;
+}
+
+:host(webui-browser-app) #addressBox:has(#locationIconButton:not([hidden])) #address {
+  --classic-search-icon-visibility: hidden;
+}
+
+:host(cr-searchbox-input) #inputInnerContainer {
+  height: 28px;
+  min-height: 28px;
+  align-items: center;
+}
+
+:host(cr-searchbox-input) #input {
+  box-sizing: border-box;
+  height: 28px;
+  padding-block: 0;
+}
+
+:host(cr-searchbox-input) #icon {
+  visibility: var(--classic-search-icon-visibility, visible);
+  box-sizing: border-box;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 28px;
+  padding: 0;
+}
+
+:host(webui-browser-extensions-bar[visible]) {
+  align-items: center;
+  flex-shrink: 0;
+}
+
+:host(webui-browser-extensions-bar) cr-icon-button {
+  --cr-icon-button-size: 28px;
+  --cr-icon-button-icon-size: 16px;
+  --cr-icon-button-margin-start: 0;
+  --cr-icon-button-margin-end: 0;
+}
+
+:host(webui-browser-extension),
+:host(webui-browser-extension[visible]) {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+}
+
+:host(webui-browser-extension) cr-button {
+  min-width: 32px;
+  --cr-button-height: 32px;
+}
+
+:host(webui-browser-extension) icon-from-table {
+  width: 16px;
+  height: 16px;
+  margin: 8px;
+  --icon-size: 16px;
+}
+
+:host(cr-icon-button#extensionsMenuButton) cr-icon {
+  transform: translate(-0.8px, 0.8px);
+}
+
+:host(webui-browser-app) #bookmarkBar {
+  height: 32px;
+}
+
+:host(webui-browser-bookmark) .bookmark {
+  height: 28px;
+  font-size: 12px;
 }
 
 :host(webui-browser-tab-strip) #tabstrip {

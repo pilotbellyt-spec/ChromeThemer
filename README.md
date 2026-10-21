@@ -26,3 +26,8 @@ ChromeThemer allows you to import userChrome.css or userChrome.js to Chrome's sh
 
 - use any theme you want, or create one
 - 2 sample themes are also attached: graphite, a pretty standard dark theme, and chrome 68 dark, which replicates the old Chrome pre-M69 design, but in dark mode
+
+
+# Creating a theme
+
+- check the [Theme Guide](/docs/creating-themes.md)

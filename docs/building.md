@@ -1,6 +1,6 @@
 # Build ChromeThemer
 
-Run these commands from the repo root. The frontend uses Node.js 22 in CI, and the Rust workspace needs a stable toolchain with Rust 2024 support.
+Run these commands from the repo root. The frontend uses Node.js 22 in CI. Rust 1.97 or newer is required for the native theme bundler.
 
 ```sh
 npm ci

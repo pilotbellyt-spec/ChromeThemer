@@ -4,27 +4,65 @@ Examples are in the [theme guide](creating-themes.md).
 
 ## Theme files
 
-| File | Required | Used by | Limit |
+| File | Required | Used by | Format |
 | --- | --- | --- | --- |
-| `userChrome.css` | Yes | GUI and CLI Apply | 4 MiB of UTF-8 text |
-| `userChrome.js` | No | GUI and CLI Apply with unsafe theme files enabled | 4 MiB of UTF-8 text |
-| `colors.json` | No | GUI Apply | 16 KiB of JSON |
+| `userChrome.css` | Yes | GUI and CLI Apply | UTF-8 CSS |
+| `userChrome.js` | No | GUI and CLI Apply with unsafe theme files enabled | UTF-8 JavaScript |
+| `colors.json` | No | GUI Apply | JSON |
 
-With unsafe theme files disabled, `userChrome.js` isn't loaded.
+The script entry can instead use `.mjs`, `.ts`, `.mts`, `.jsx`, `.tsx`, `.cjs` or `.cts`. Only one `userChrome` script entry is allowed.
 
 ## CSS runtime
 
 Your CSS is shared across Webium's document and shadow roots, including new roots added later. Use `:host(component-name)` for internal rules.
 
-The loader uses `replaceSync()`, so `@import` won't load. Extra assets aren't bundled, and URLs aren't relative to the theme folder.
+Local `@import` supports media queries, `supports()` and cascade layers. Put imports before style rules. Circular imports, remote imports and `@namespace` aren't supported.
+
+Local images and fonts work in `url(...)` and `image-set()`. Paths are relative to the CSS file that uses them. SVG fragments work too.
+
+Local paths use forward slashes and must stay inside the theme folder, including symlink targets. For local `@font-face` files, only the first embedded source is used.
 
 The loader sets `.tabstripDiv` to `app-region: drag` after your CSS.
+
+## Imported file types
+
+| Type | Extensions | Imported as |
+| --- | --- | --- |
+| JavaScript | `.js`, `.mjs`, `.cjs`, `.jsx` | Code |
+| TypeScript | `.ts`, `.mts`, `.cts`, `.tsx` | Code |
+| JSON | `.json` | Parsed object or value |
+| CSS | `.css` | Applied stylesheet, default export is CSS text |
+| Text | `.txt`, `.html`, `.htm`, `.xml`, `.md`, `.csv`, `.yaml`, `.yml`, `.toml`, `.glsl`, `.wgsl` | String, not parsed |
+| Images and cursors | `.png`, `.apng`, `.jpg`, `.jpeg`, `.jfif`, `.svg`, `.gif`, `.webp`, `.avif`, `.ico`, `.cur`, `.bmp` | Data URL |
+| Fonts | `.woff`, `.woff2`, `.ttf`, `.otf`, `.ttc`, `.otc` | Data URL |
+| Audio | `.mp3`, `.wav`, `.ogg`, `.oga`, `.opus`, `.flac`, `.aac`, `.m4a` | Data URL |
+| Video | `.mp4`, `.m4v`, `.webm`, `.ogv` | Data URL |
+| WebAssembly | `.wasm` | Data URL, not executed |
+
+Import options:
+
+| Query | Default export |
+| --- | --- |
+| `?raw` | UTF-8 string |
+| `?url` | Data URL for a supported asset type |
+| `?base64` | Base64 string |
+| `?binary` | `Uint8Array` |
+
+`?raw`, `?base64` and `?binary` accept any local file extension. Raw CSS isn't applied automatically. CSS imported normally from scripts is appended after `userChrome.css`, in module execution order. Sass, Less and Stylus aren't compiled.
+
+JSX needs a supplied local factory or runtime. The classic JSX pragmas `@jsxRuntime classic` and `@jsx h` use an imported `h` function. Bare package imports don't resolve.
+
+Webium can block audio and video data URLs.
 
 ## JavaScript runtime
 
 Your script runs after `webui-browser-app` finishes its first `updateComplete`. Nested components may need their own wait.
 
-You can use `await`, but not static `import` declarations. Use `import()` for modules the browser UI can access.
+Static relative imports, exports, local CommonJS `require()` and top-level `await` work. Include file extensions in paths.
+
+Static imports of Chrome-native modules aren't supported. Those use `import()` with a literal `/...`, `//resources/...`, `chrome://...` or `chrome-untrusted://...` URL. Local dynamic imports and package imports aren't supported.
+
+Top-level `return` works in `userChrome.js` without static imports or exports.
 
 Scripts run with Chrome UI privileges. Errors appear in the Webium console with the prefix `ChromeThemer userChrome.js:`.
 
@@ -96,7 +134,7 @@ Leave it out to keep the current palette. To undo a previous palette Apply, use 
 | Symptom | Check |
 | --- | --- |
 | Edits don't show up | Apply again. Launch doesn't reread theme files. |
-| Images don't load | The loader doesn't bundle extra files. Use data URLs. |
+| Images don't load | Use a local CSS `url(...)` or JS asset import. Plain relative strings in JS aren't bundled. |
 | JS doesn't run | Enable unsafe theme files before applying. |
 | JS runs before a child is ready | Wait for that component's `updateComplete`. |
 | New Tab has no omnibox icon | Don't hide the searchbox icon when the location button is hidden. |

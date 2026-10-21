@@ -1,3 +1,4 @@
+mod bundle;
 pub mod pak;
 pub mod palette;
 mod webium;
@@ -38,8 +39,6 @@ pub enum ThemeFiles {
     CssOnly,
     Unsafe,
 }
-
-const MAX_THEME_FILE_BYTES: usize = 4 * 1024 * 1024;
 
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -149,26 +148,7 @@ fn inspect_archive(archive: &Archive) -> Result<Inspection> {
 }
 
 pub fn apply(path: &Path, theme: &Path, files: ThemeFiles) -> Result<Inspection> {
-    let css = fs::read_to_string(theme.join("userChrome.css"))
-        .context("Theme folder must contain a UTF-8 userChrome.css")?;
-    ensure!(
-        css.len() <= MAX_THEME_FILE_BYTES,
-        "userChrome.css must be at most 4 MiB"
-    );
-    let script = match files {
-        ThemeFiles::CssOnly => None,
-        ThemeFiles::Unsafe => match fs::read_to_string(theme.join("userChrome.js")) {
-            Ok(script) => {
-                ensure!(
-                    script.len() <= MAX_THEME_FILE_BYTES,
-                    "userChrome.js must be at most 4 MiB"
-                );
-                Some(script)
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
-            Err(e) => return Err(e).context("Cannot read UTF-8 userChrome.js"),
-        },
-    };
+    let theme = bundle::load(theme, files)?;
     let archive = Archive::open(path)?;
     let current = fs::read(&archive.path)?;
     let current_hash = sha256(&current);
@@ -184,7 +164,7 @@ pub fn apply(path: &Path, theme: &Path, files: ThemeFiles) -> Result<Inspection>
         ),
     };
     let mut pak = Pak::parse(&original)?;
-    webium::patch(&mut pak, &css, script.as_deref())?;
+    webium::patch(&mut pak, &theme.css, theme.script.as_deref())?;
     let patched = pak.encode()?;
     Pak::parse(&patched).context("Generated archive failed validation")?;
     match fs::read(&archive.backup) {
@@ -298,6 +278,53 @@ mod tests {
         bytes.extend(js);
         fs::write(&path, bytes).unwrap();
         (dir, path, theme)
+    }
+
+    #[test]
+    fn applying_a_theme_embeds_imported_css_and_images() {
+        let (_dir, path, theme) = setup();
+        fs::create_dir(theme.join("styles")).unwrap();
+        fs::write(theme.join("userChrome.css"), "@import 'styles/tabs.css';").unwrap();
+        fs::write(
+            theme.join("styles/tabs.css"),
+            ".tab { background: url('../icon.svg'); }",
+        )
+        .unwrap();
+        fs::write(
+            theme.join("icon.svg"),
+            "<svg xmlns='http://www.w3.org/2000/svg'/>",
+        )
+        .unwrap();
+        apply(&path, &theme, ThemeFiles::CssOnly).unwrap();
+        let pak = Pak::parse(&fs::read(path).unwrap()).unwrap();
+        let script = String::from_utf8(pak.resources[&2].clone()).unwrap();
+        assert!(script.contains("data:image/svg+xml;base64,"));
+    }
+
+    #[test]
+    fn a_missing_css_import_leaves_the_archive_and_backup_folder_untouched() {
+        let (_dir, path, theme) = setup();
+        let original = fs::read(&path).unwrap();
+        fs::write(theme.join("userChrome.css"), "@import 'missing.css';").unwrap();
+        assert!(apply(&path, &theme, ThemeFiles::CssOnly).is_err());
+        assert_eq!(fs::read(&path).unwrap(), original);
+        assert!(!path.with_file_name("resources.pak.chromethemer").exists());
+    }
+
+    #[test]
+    fn css_only_does_not_resolve_javascript_imports() {
+        let (_dir, path, theme) = setup();
+        fs::write(theme.join("userChrome.js"), "import '../outside.js';").unwrap();
+        assert!(apply(&path, &theme, ThemeFiles::CssOnly).is_ok());
+    }
+
+    #[test]
+    fn a_missing_javascript_import_leaves_the_archive_untouched() {
+        let (_dir, path, theme) = setup();
+        let original = fs::read(&path).unwrap();
+        fs::write(theme.join("userChrome.js"), "import './missing.js';").unwrap();
+        assert!(apply(&path, &theme, ThemeFiles::Unsafe).is_err());
+        assert_eq!(fs::read(&path).unwrap(), original);
     }
 
     #[test]

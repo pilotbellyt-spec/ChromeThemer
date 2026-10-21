@@ -4,7 +4,6 @@ use anyhow::{Context, Result, bail, ensure};
 use flate2::read::GzDecoder;
 
 const INDEX_ENTRY_BYTES: usize = 6;
-const MAX_DECODED_BYTES: u64 = 64 * 1024 * 1024;
 
 #[derive(Debug)]
 pub struct Pak {
@@ -147,21 +146,13 @@ impl Pak {
 pub fn decode(bytes: &[u8]) -> Result<Vec<u8>> {
     let mut decoded = Vec::new();
     if bytes.starts_with(&[0x1f, 0x8b]) {
-        GzDecoder::new(bytes)
-            .take(MAX_DECODED_BYTES + 1)
-            .read_to_end(&mut decoded)?;
+        GzDecoder::new(bytes).read_to_end(&mut decoded)?;
     } else if bytes.starts_with(&[0x1e, 0x9b]) {
         ensure!(bytes.len() >= 8, "Truncated Brotli resource header");
         let mut size = [0_u8; 8];
         size[..6].copy_from_slice(&bytes[2..8]);
         let expected = u64::from_le_bytes(size);
-        ensure!(
-            expected <= MAX_DECODED_BYTES,
-            "Brotli resource is too large"
-        );
-        brotli::Decompressor::new(&bytes[8..], 4096)
-            .take(MAX_DECODED_BYTES + 1)
-            .read_to_end(&mut decoded)?;
+        brotli::Decompressor::new(&bytes[8..], 4096).read_to_end(&mut decoded)?;
         ensure!(
             decoded.len() as u64 == expected,
             "Brotli resource size mismatch"
@@ -169,10 +160,6 @@ pub fn decode(bytes: &[u8]) -> Result<Vec<u8>> {
     } else {
         return Ok(bytes.to_vec());
     }
-    ensure!(
-        decoded.len() as u64 <= MAX_DECODED_BYTES,
-        "Decoded resource is too large"
-    );
     Ok(decoded)
 }
 

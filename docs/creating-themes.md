@@ -7,7 +7,12 @@ my-theme/
     userChrome.css
     userChrome.js    # optional
     colors.json      # optional
+    styles/          # optional
+    scripts/         # optional
+    images/          # optional
 ```
+
+The script entry can also be `userChrome.mjs`, `userChrome.ts`, `userChrome.mts`, `userChrome.jsx`, `userChrome.tsx`, `userChrome.cjs` or `userChrome.cts`. Pick one entry, then import the other files from it.
 
 ## Apply a theme
 
@@ -67,7 +72,7 @@ Leave out `colors.json` if you want the user's current palette. Use Chrome's col
 }
 ```
 
-Webium already loads `chrome://theme/colors.css?sets=ui,chrome` and updates it when Chrome's palette changes. You don't need an import. In fact, `@import` won't load through the theme's `replaceSync()` call.
+Webium already loads `chrome://theme/colors.css?sets=ui,chrome` and updates it when Chrome's palette changes. You don't need an import.
 
 Webium's searchbox uses `--color-searchbox-*` properties. You can map them to Chrome's omnibox colors on the app host:
 
@@ -150,9 +155,43 @@ window.addEventListener('pagehide', () => events.abort(), {once: true});
 
 You can use `--my-theme-pointer-x` in a tab gradient. The script runs with Chrome UI privileges, and browser-internal APIs aren't stable. Script errors appear in the Webium console with the prefix `ChromeThemer userChrome.js:`.
 
-## Images and other files
+## Split a theme into files
 
-Use data URLs for icons and images. The loader doesn't bundle external image or media files.
+Import CSS from `userChrome.css`:
+
+```css
+@import './styles/tabs.css';
+@import './styles/toolbar.css';
+```
+
+Paths are relative to the file that uses them. Put imports before other rules. You can use local images and fonts in `url(...)`:
+
+```css
+/* styles/toolbar.css */
+:host(webui-browser-app) #backButton {
+	background-image: url('../images/back.svg');
+}
+```
+
+JavaScript uses normal modules:
+
+```js
+// userChrome.js
+import { setupTabs } from './scripts/tabs.js';
+import icon from './images/back.svg';
+
+await setupTabs(icon);
+```
+
+```js
+// scripts/tabs.js
+export async function setupTabs(icon) {
+	const app = document.querySelector('webui-browser-app');
+	app.style.setProperty('--my-back-icon', `url("${icon}")`);
+}
+```
+
+Keep files inside the theme folder and include extensions in imports. Local `import()`, npm packages and remote CSS imports aren't supported. See the [file type reference](theme-reference.md#imported-file-types) for other supported files and import options.
 
 ## Test with the CLI
 

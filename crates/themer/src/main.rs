@@ -18,7 +18,7 @@ enum Command {
     Apply {
         pak: PathBuf,
         theme: PathBuf,
-        #[arg(long, help = "Include userChrome.js with Chrome UI privileges")]
+        #[arg(long, help = "Include theme scripts with Chrome UI privileges")]
         allow_unsafe_theme_files: bool,
     },
     Restore {

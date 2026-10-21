@@ -6,7 +6,52 @@
       -webkit-app-region: drag;
     }
   `);
+  installFonts(sheet);
   const roots = new WeakMap();
+
+  function installFonts(styles, media = []) {
+    for (let i = styles.cssRules.length - 1; i >= 0; --i) {
+      const rule = styles.cssRules[i];
+      if (rule instanceof CSSMediaRule) {
+        installFonts(rule, [...media, matchMedia(rule.conditionText)]);
+      } else if (rule instanceof CSSSupportsRule) {
+        if (CSS.supports(rule.conditionText)) installFonts(rule, media);
+      } else if (rule instanceof CSSFontFaceRule) {
+        const encoded = rule.style.getPropertyValue('src').match(/data:font\/[\w-]+;base64,([A-Za-z0-9+/=]+)/);
+        if (!encoded) continue;
+        const descriptors = {};
+        for (const [name, property] of Object.entries({
+          style: 'font-style', weight: 'font-weight', stretch: 'font-stretch', variant: 'font-variant',
+          unicodeRange: 'unicode-range', featureSettings: 'font-feature-settings',
+          variationSettings: 'font-variation-settings', display: 'font-display',
+          ascentOverride: 'ascent-override', descentOverride: 'descent-override',
+          lineGapOverride: 'line-gap-override', sizeAdjust: 'size-adjust',
+        })) {
+          const value = rule.style.getPropertyValue(property);
+          if (value) descriptors[name] = value;
+        }
+        // Webium's font-src blocks data URLs. Buffer-backed FontFace needs no URL fetch.
+        const bytes = Uint8Array.from(atob(encoded[1]), byte => byte.charCodeAt(0));
+        let font;
+        try {
+          font = new FontFace(rule.style.getPropertyValue('font-family'), bytes, descriptors);
+        } catch (error) {
+          console.warn('ChromeThemer font:', error);
+          continue;
+        }
+        styles.deleteRule(i);
+        const sync = () => {
+          if (media.every(query => query.matches)) document.fonts.add(font);
+          else document.fonts.delete(font);
+        };
+        for (const query of media) query.addEventListener('change', sync);
+        font.loaded.catch(error => console.warn('ChromeThemer font:', error));
+        sync();
+      } else if (rule.cssRules && typeof rule.deleteRule === 'function') {
+        installFonts(rule, media);
+      }
+    }
+  }
 
   function adopt(root) {
     if (!root.adoptedStyleSheets.includes(sheet)) {

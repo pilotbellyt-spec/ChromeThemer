@@ -6,7 +6,7 @@ ChromeThemer allows you to import userChrome.css or userChrome.js to Chrome's sh
 
 ## Requirements
 
-- The "webium" flag MUST be enabled in chrome://flags if you want the theme to be persistent. 
+- The "webium" flag MUST be enabled in chrome://flags if you want the theme to be persistent without a shortcut, if combined titlebar is enabled, you will need a shortcut no matter what.
 
 
 

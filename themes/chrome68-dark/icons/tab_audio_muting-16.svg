@@ -1,0 +1,20 @@
+<!-- Chromium 68.0.3440.106, chrome/app/vector_icons/tab_audio_muting.icon. See ../LICENSE.chromium. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" shape-rendering="crispEdges" d="M3 2
+    l10 10
+    v2
+    l-4 -4
+    v3
+    l-4 -4
+    h-1
+    v-3
+    h1
+    l-3 -3
+    Z"/>
+  <path fill-rule="evenodd" fill="none" stroke="black" stroke-width="1" d="M8.5 3
+    v2.5
+    M10.5 6
+    v1.5
+    M12.5 5
+    v4.5"/>
+</svg>

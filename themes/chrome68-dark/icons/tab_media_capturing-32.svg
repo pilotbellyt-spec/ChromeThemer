@@ -1,0 +1,21 @@
+<!-- Chromium 68.0.3440.106, chrome/app/vector_icons/tab_media_capturing.icon. See ../LICENSE.chromium. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <path fill-rule="evenodd" d="M0 4
+    h32
+    v24
+    H0
+    V4
+    Z
+    m2 2
+    h28
+    v20
+    H2
+    V6
+    Z
+    m2 2
+    h24
+    v16
+    H4
+    V8
+    Z"/>
+</svg>

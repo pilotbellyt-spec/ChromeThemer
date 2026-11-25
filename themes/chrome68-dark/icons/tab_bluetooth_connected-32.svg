@@ -1,0 +1,31 @@
+<!-- Chromium 68.0.3440.106, chrome/app/vector_icons/tab_bluetooth_connected.icon. See ../LICENSE.chromium. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <path fill-rule="evenodd" d="M16.8 2
+    h-1.4
+    v10.63
+    L8.97 6.2
+    L7 8.17
+    L14.83 16
+    L7 23.83
+    L8.97 25.8
+    l6.43 -6.43
+    V30
+    h1.4
+    l7.99 -7.99
+    L18.77 16
+    l6.02 -6.01
+    L16.8 2
+    Z
+    M18 7
+    l3 3
+    l-3 3
+    l0.2 -5.64
+    L18 7
+    Z
+    m3 15.01
+    L18 25
+    v-6
+    l2.83 3.01
+    H21
+    Z"/>
+</svg>

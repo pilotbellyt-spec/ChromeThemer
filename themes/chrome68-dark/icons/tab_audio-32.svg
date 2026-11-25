@@ -1,0 +1,20 @@
+<!-- Chromium 68.0.3440.106, chrome/app/vector_icons/tab_audio.icon. See ../LICENSE.chromium. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <path fill-rule="evenodd" d="M17 7
+    v18
+    l-6 -6
+    h-4
+    v-6
+    h4
+    Z
+    M19 13
+    v6
+    h2
+    v-6
+    Z
+    M23 11
+    v10
+    h2
+    v-10
+    Z"/>
+</svg>

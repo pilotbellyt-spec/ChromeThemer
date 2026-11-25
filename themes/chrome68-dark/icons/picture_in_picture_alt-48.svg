@@ -1,0 +1,25 @@
+<!-- Chromium 68.0.3440.106, chrome/app/vector_icons/picture_in_picture_alt.icon. See ../LICENSE.chromium. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <path fill-rule="evenodd" d="M38 22
+    H22
+    v11.99
+    h16
+    V22
+    Z
+    m8 16
+    V9.96
+    C46 7.76 44.2 6 42 6
+    H6
+    C3.8 6 2 7.76 2 9.96
+    V38
+    c0 2.2 1.8 4 4 4
+    h36
+    c2.2 0 4 -1.8 4 -4
+    Z
+    m-4 0.04
+    H6
+    V9.94
+    h36
+    v28.1
+    Z"/>
+</svg>

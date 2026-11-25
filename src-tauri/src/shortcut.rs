@@ -36,7 +36,7 @@ pub fn create(destination: &Path, executable: &Path, combined: bool) -> Result<(
 }
 
 #[cfg(target_os = "windows")]
-fn windows_path(path: &Path) -> Result<String> {
+pub(crate) fn windows_path(path: &Path) -> Result<String> {
     let text = path.to_str().context("Shortcut path is not valid UTF-8")?;
     Ok(if let Some(unc) = text.strip_prefix(r"\\?\UNC\") {
         format!(r"\\{unc}")
@@ -110,7 +110,7 @@ impl Drop for Apartment {
     }
 }
 #[cfg(target_os = "windows")]
-fn windows_quote(arg: &str) -> String {
+pub(crate) fn windows_quote(arg: &str) -> String {
     let mut quoted = String::from("\"");
     let mut slashes = 0;
     for character in arg.chars() {

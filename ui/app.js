@@ -126,6 +126,11 @@ document.querySelector('#restore').addEventListener('click', () => run('restore_
   executable: browser.value.trim(),
 }, result => operationMessage(result, 'Original theme restored')));
 
+document.querySelector('#make-default').addEventListener('click', () => run('make_default_browser', {
+  executable: browser.value.trim(),
+  experimentalFrameless: frameless.checked,
+}, 'Choose Chrome (ChromeThemer) in Windows Settings, then select Set default.'));
+
 document.querySelector('#open-theme').addEventListener('click', () =>
   run('open_theme', { theme: theme.value.trim() }, 'Theme folder opened.'));
 
@@ -140,6 +145,7 @@ async function checkEnvironment() {
     const supportsCombinedTitlebar = platform === 'windows' || platform === 'linux';
     document.querySelector('#titlebar-option').hidden = !supportsCombinedTitlebar;
     document.querySelector('#shortcut').hidden = !supportsCombinedTitlebar;
+    document.querySelector('#make-default').hidden = platform !== 'windows';
     if (!supportsCombinedTitlebar) frameless.checked = false;
     environmentReady = true;
   } catch (error) {

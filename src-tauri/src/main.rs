@@ -14,6 +14,8 @@ use sysinfo::System;
 use tauri::{Manager, State};
 use tauri_plugin_opener::OpenerExt;
 
+#[cfg(target_os = "windows")]
+mod default_browser;
 mod launch;
 mod native_frame;
 mod profiles;
@@ -176,6 +178,14 @@ fn browser(path: &str) -> Result<Browser> {
 }
 
 fn ensure_closed(executable: &Path) -> Result<()> {
+    ensure!(
+        !browser_running(executable)?,
+        "Close this Chrome installation before applying or restoring a theme"
+    );
+    Ok(())
+}
+
+fn browser_running(executable: &Path) -> Result<bool> {
     let system = System::new_all();
     let name = executable
         .file_name()
@@ -195,12 +205,11 @@ fn ensure_closed(executable: &Path) -> Result<()> {
             }
             Err(e) => return Err(e).context("Cannot resolve a running Chrome executable"),
         };
-        ensure!(
-            path != executable,
-            "Close this Chrome installation before applying or restoring a theme"
-        );
+        if path == executable {
+            return Ok(true);
+        }
     }
-    Ok(())
+    Ok(false)
 }
 
 #[tauri::command]
@@ -337,6 +346,36 @@ fn launch_browser(
 }
 
 #[tauri::command]
+async fn make_default_browser(
+    executable: String,
+    experimental_frameless: bool,
+    app: tauri::AppHandle,
+) -> std::result::Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || -> Result<()> {
+        #[cfg(target_os = "windows")]
+        {
+            let browser = browser(&executable)?;
+            default_browser::register(
+                &std::env::current_exe()?.canonicalize()?,
+                &browser.executable,
+                experimental_frameless,
+            )?;
+            app.opener()
+                .open_url(default_browser::SETTINGS_URL, None::<&str>)?;
+            Ok(())
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            let _ = (executable, experimental_frameless, app);
+            bail!("Default browser registration is available on Windows");
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| format!("{e:#}"))
+}
+
+#[tauri::command]
 async fn create_shortcut(
     executable: String,
     experimental_frameless: bool,
@@ -396,13 +435,9 @@ fn main() {
             Ok(launch::Startup::Launch {
                 executable,
                 combined,
+                targets,
             }) => {
-                let result = launch::start(&executable, combined).and_then(|(running, frame)| {
-                    if let native_frame::FrameStatus::Unsupported { reason } = frame {
-                        launch::show_error(&anyhow::anyhow!("Combined titlebar failed: {reason}"));
-                    }
-                    running.wait()
-                });
+                let result = launch::open(&executable, combined, &targets);
                 if let Err(error) = result {
                     launch::show_error(&error);
                     std::process::exit(1);
@@ -426,6 +461,7 @@ fn main() {
             restore_browser,
             launch_browser,
             create_shortcut,
+            make_default_browser,
             open_theme
         ])
         .build(tauri::generate_context!())

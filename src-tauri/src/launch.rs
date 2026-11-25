@@ -18,7 +18,11 @@ pub struct RunningBrowser {
 
 pub enum Startup {
     Gui,
-    Launch { executable: PathBuf, combined: bool },
+    Launch {
+        executable: PathBuf,
+        combined: bool,
+        targets: Vec<OsString>,
+    },
 }
 
 impl Startup {
@@ -33,20 +37,63 @@ impl Startup {
         let executable = args
             .next()
             .context("Choose a Chrome executable after --launch")?;
-        let combined = match args.next() {
-            None => false,
-            Some(flag) if flag == "--combined-titlebar" => true,
-            Some(_) => bail!("Unknown launch option"),
-        };
-        anyhow::ensure!(args.next().is_none(), "Too many launch arguments");
+        let mut combined = false;
+        let mut targets = Vec::new();
+        while let Some(flag) = args.next() {
+            if flag == "--" {
+                targets.extend(args);
+                break;
+            }
+            anyhow::ensure!(
+                flag == "--combined-titlebar" && !combined,
+                "Unknown launch option"
+            );
+            combined = true;
+        }
         Ok(Self::Launch {
             executable: executable.into(),
             combined,
+            targets,
         })
     }
 }
 
 pub fn start(executable: &Path, combined: bool) -> Result<(RunningBrowser, FrameStatus)> {
+    start_with_targets(executable, combined, &[])
+}
+
+pub fn open(executable: &Path, combined: bool, targets: &[OsString]) -> Result<()> {
+    let browser = crate::browser(
+        executable
+            .to_str()
+            .context("Chrome path is not valid UTF-8")?,
+    )?;
+    let executable = browser.executable.as_path();
+    if !targets.is_empty() && crate::browser_running(executable)? {
+        let status = Command::new(executable)
+            .arg("--")
+            .args(targets)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .context("Cannot open link in Chrome")?
+            .wait()?;
+        anyhow::ensure!(status.success(), "Chrome could not open the link: {status}");
+        return Ok(());
+    }
+    let (running, frame) = start_with_targets(executable, combined, targets)?;
+    if let FrameStatus::Unsupported { reason } = frame {
+        show_error(&anyhow::anyhow!("Combined titlebar failed: {reason}"));
+    }
+    running.wait()
+}
+
+fn start_with_targets(
+    executable: &Path,
+    combined: bool,
+    targets: &[OsString],
+) -> Result<(RunningBrowser, FrameStatus)> {
     let executable = executable
         .to_str()
         .context("Chrome path is not valid UTF-8")?;
@@ -63,6 +110,8 @@ pub fn start(executable: &Path, combined: bool) -> Result<(RunningBrowser, Frame
             "--disable-features=WebUIBundledCodeCache",
         ])
         .arg(&marker)
+        .arg("--")
+        .args(targets)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -117,4 +166,116 @@ pub fn show_error(error: &anyhow::Error) {
         .set_description(format!("{error:#}"))
         .set_level(rfd::MessageLevel::Error)
         .show();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn launch_targets_start_after_the_option_separator() {
+        let Startup::Launch {
+            executable,
+            combined,
+            targets,
+        } = Startup::parse(
+            [
+                "--launch",
+                r"C:\Chrome 空\chrome.exe",
+                "--combined-titlebar",
+                "--",
+                "https://example.com/?a=1&b=2",
+                "--looks-like-a-flag",
+            ]
+            .map(OsString::from),
+        )
+        .unwrap()
+        else {
+            panic!("Expected launch")
+        };
+        assert_eq!(executable, PathBuf::from(r"C:\Chrome 空\chrome.exe"));
+        assert!(combined);
+        assert_eq!(
+            targets,
+            ["https://example.com/?a=1&b=2", "--looks-like-a-flag"].map(OsString::from)
+        );
+        for args in [
+            vec!["--launch"],
+            vec!["--launch", "chrome", "--unknown"],
+            vec!["--launch", "chrome", "https://example.com"],
+        ] {
+            assert!(Startup::parse(args.into_iter().map(OsString::from)).is_err());
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn links_launch_and_forward_to_a_running_browser() {
+        let dir = tempfile::tempdir().unwrap();
+        let executable = dir.path().join("test-browser.exe");
+        let source = dir.path().join("browser.c");
+        std::fs::write(&source, r#"
+#include <windows.h>
+#include <stdio.h>
+#include <wchar.h>
+int wmain(int argc, wchar_t **argv) {
+    int initial = 0;
+    for (int i = 1; i < argc; i++) if (wcsstr(argv[i], L"--chromethemer-session=") == argv[i]) initial = 1;
+    wchar_t path[MAX_PATH];
+    GetModuleFileNameW(NULL, path, MAX_PATH);
+    wcscpy(wcsrchr(path, L'\\') + 1, initial ? L"initial.txt" : L"forwarded.txt");
+    FILE *out = _wfopen(path, L"wb");
+    for (int i = 1; i < argc; i++) {
+        fwrite(argv[i], sizeof(wchar_t), wcslen(argv[i]), out);
+        wchar_t newline = L'\n';
+        fwrite(&newline, sizeof(wchar_t), 1, out);
+    }
+    fclose(out);
+    if (initial) Sleep(15000);
+    return 0;
+}
+"#).unwrap();
+        let compiler = std::env::var_os("CHROMETHEMER_FRAME_CC")
+            .unwrap_or_else(|| r"C:\msys64\ucrt64\bin\gcc.exe".into());
+        assert!(
+            Command::new(compiler)
+                .arg(&source)
+                .args(["-municode", "-static-libgcc", "-o"])
+                .arg(&executable)
+                .status()
+                .unwrap()
+                .success()
+        );
+        std::fs::write(dir.path().join("resources.pak"), b"test").unwrap();
+        let executable = executable.canonicalize().unwrap();
+        let target = OsString::from("https://example.com/空?q=one&two=2");
+        let (mut running, _) = start_with_targets(&executable, false, &[target.clone()]).unwrap();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while !dir.path().join("initial.txt").exists() {
+            assert!(Instant::now() < deadline);
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        assert!(crate::browser_running(&executable).unwrap());
+        open(&executable, true, &[target]).unwrap();
+        running.child.kill().unwrap();
+        running.child.wait().unwrap();
+        let read = |name| {
+            let bytes = std::fs::read(dir.path().join(name)).unwrap();
+            String::from_utf16(
+                &bytes
+                    .chunks_exact(2)
+                    .map(|b| u16::from_le_bytes([b[0], b[1]]))
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap()
+        };
+        let initial = read("initial.txt");
+        assert!(initial.contains("--enable-features=Webium"));
+        assert!(initial.contains("--chromethemer-session="));
+        assert!(initial.contains("https://example.com/空?q=one&two=2"));
+        let forwarded = read("forwarded.txt");
+        assert!(forwarded.starts_with("--\n"));
+        assert!(forwarded.contains("https://example.com/空?q=one&two=2"));
+        assert!(!forwarded.contains("--chromethemer-session="));
+    }
 }

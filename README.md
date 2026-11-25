@@ -31,3 +31,5 @@ ChromeThemer allows you to import userChrome.css or userChrome.js to Chrome's sh
 ## Creating a theme
 
 - check the [Theme Guide](/docs/creating-themes.md)
+
+On Windows, select **Make default…** to register the selected Chrome installation and titlebar setting. In Windows Settings, choose **Chrome (ChromeThemer)** and select **Set default**. Web links and HTML files then open through ChromeThemer, including when Chrome is already running. Select **Make default…** again after changing the Chrome path, titlebar setting, or ChromeThemer location.

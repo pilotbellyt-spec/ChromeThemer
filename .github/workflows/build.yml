@@ -88,7 +88,12 @@ jobs:
           (Split-Path -Parent $compiler) >> $env:GITHUB_PATH
       - run: npm ci
       - name: Build app
-        run: npm run tauri -- build --ci --no-bundle --target ${{ matrix.target }} --features custom-protocol -- --locked
+        shell: pwsh
+        run: |
+          npm run build
+          if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed' }
+          cargo build --release -p chromethemer-desktop --target ${{ matrix.target }} --features custom-protocol --locked --message-format=json > cargo-build.json
+          if ($LASTEXITCODE -ne 0) { throw 'Windows build failed' }
       - name: Package installer and portable ZIP
         shell: pwsh
         env:
@@ -99,6 +104,16 @@ jobs:
           $release = Join-Path $PWD "target/$env:TARGET/release"
           $exe = Join-Path $release 'chromethemer-desktop.exe'
           $helper = Join-Path $release 'ChromeThemerFrame.dll'
+          $helperPaths = @(Get-Content -LiteralPath cargo-build.json | ForEach-Object {
+            $message = $_ | ConvertFrom-Json
+            if ($message.reason -eq 'build-script-executed') {
+              foreach ($variable in $message.env) {
+                if ($variable[0] -eq 'CHROMETHEMER_FRAME_DLL') { $variable[1] }
+              }
+            }
+          })
+          if ($helperPaths.Count -ne 1) { throw 'Expected one frame helper from Cargo build output' }
+          Copy-Item -LiteralPath $helperPaths[0] -Destination $helper -Force
           foreach ($binary in @($exe, $helper)) {
             $bytes = [IO.File]::ReadAllBytes($binary)
             $header = [BitConverter]::ToInt32($bytes, 0x3c)
